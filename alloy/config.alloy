@@ -37,3 +37,6 @@ prometheus.remote_write "mimir" {
       }
     }
 }
+
+// Configuration for OTEL metrics, logs, traces
+

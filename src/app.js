@@ -5,6 +5,8 @@ const morgan = require('morgan');
 const { register, collectDefaultMetrics, Counter, Histogram, Gauge } = require('prom-client');
 const { trace, context } = require('@opentelemetry/api');
 const { faker } = require('@faker-js/faker');
+const pino = require('pino');
+
 
 // Initialize OpenTelemetry
 require('./instrumentation');
@@ -15,8 +17,21 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(helmet());
 app.use(cors());
-app.use(morgan('combined'));
+//app.use(morgan('combined'));
 app.use(express.json());
+
+// Set up Pino
+logger = pino();
+
+// Create a stream for Morgan to write to, which Pino will then process
+const morganStream = {
+  write: (message) => {
+    logger.info(message.trim()); // Log Morgan's output using Pino
+  },
+};
+
+// Set up Morgan through Pino
+app.use(morgan('combined', { stream: morganStream }));
 
 // Prometheus metrics
 collectDefaultMetrics({ register });
