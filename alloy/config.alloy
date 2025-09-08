@@ -1,0 +1,39 @@
+logging {
+  level  = "info"
+  format = "logfmt"
+}
+
+// Enable this section to carry out live debugging when configuring Alloy.
+livedebugging {
+    enabled = false
+}
+
+// Set up Prometheus scraping for the ecommerce app /metrics endpoint
+// This component scrapes the Mythical application, defining unique prometheus labels.
+prometheus.scrape "ecommerce_app" {
+    // Scrape from the ecommerce app requester and server services, and add them to the correct group and service name.
+    targets = [
+        {"__address__" = "ecommerce-app:3000", group = "ecommerce_app", service = "ecommerce_frontend"},
+    ]
+    // We need a scrape interval and timeout of 2s as we want reactive metric data.
+    scrape_interval = "2s"
+    scrape_timeout = "2s"
+    // Send the metrics to the prometheus remote write receiver for exporting to Mimir.
+    forward_to = [prometheus.remote_write.mimir.receiver]
+    // Attach the job name to the metrics.
+    job_name = "ecommerce_app"
+}
+
+// The prometheus.remote_write component defines an endpoint for remotely writing metrics to.
+// In this case, our locally running Mimir service.
+prometheus.remote_write "mimir" {
+    endpoint {
+      name = "hosted-prometheus"
+      url  = env("GRAFANA_CLOUD_PROMETHEUS_ENDPOINT")
+  
+      basic_auth {
+        username = env("GRAFANA_CLOUD_PROMETHEUS_USER")
+        password = env("GRAFANA_CLOUD_OTLP_TOKEN")
+      }
+    }
+}

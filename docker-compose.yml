@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  # Ecommerce Node.js application
+  ecommerce-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: grafana-demo-ecommerce
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://alloy:4318/v1/traces
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://alloy:4318/v1/metrics
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy:4318
+      - OTEL_RESOURCE_ATTRIBUTES="service.name=ecommerce-app,service.namespace=node-app-demo,deployment.environment=production"
+      - OTEL_NODE_RESOURCE_DETECTORS="env,host,os"
+    networks:
+      - grafana-demo
+    depends_on:
+      - alloy
+    restart: unless-stopped
+    labels:
+      - "com.grafana.alloy.discovery=true"
+
+  # Grafana Alloy agent for metrics and traces collection
+  alloy:
+    image: grafana/alloy:${GRAFANA_ALLOY_VERSION:-v1.10.0}
+    container_name: alloy
+    ports:
+     - 12345:12345
+     - 4317:4317
+     - 4318:4318
+    environment:
+      # Grafana Cloud configuration - replace with your actual values
+      - GRAFANA_CLOUD_PROMETHEUS_ENDPOINT=${GRAFANA_CLOUD_PROMETHEUS_ENDPOINT}
+      - GRAFANA_CLOUD_PROMETHEUS_USER=${GRAFANA_CLOUD_PROMETHEUS_USER}
+      - GRAFANA_CLOUD_PROMETHEUS_TOKEN=${GRAFANA_CLOUD_PROMETHEUS_TOKEN}
+      - GRAFANA_CLOUD_OTLP_ENDPOINT=${GRAFANA_CLOUD_OTLP_ENDPOINT}
+      - GRAFANA_CLOUD_OTLP_USER=${GRAFANA_CLOUD_OTLP_USER}
+      - GRAFANA_CLOUD_OTLP_TOKEN=${GRAFANA_CLOUD_OTLP_TOKEN}
+    networks:
+      - grafana-demo    
+    volumes:
+      - ./alloy/:/etc/alloy/
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+   
+    # build:
+    #   context: ./alloy
+    #   dockerfile: Dockerfile
+    # container_name: grafana-demo-alloy
+    # ports:
+    #   - "4317:4317"  # OTLP gRPC
+    #   - "4318:4318"  # OTLP HTTP
+    #   - "9100:9100"  # Node exporter
+    #   - "9256:9256"  # Process exporter
+    #   - "9323:9323"  # Docker exporter
+    #   - "12345:12345"  # Alloy web ui port
+    # environment:
+    #   # Grafana Cloud configuration - replace with your actual values
+    #   - GRAFANA_CLOUD_PROMETHEUS_ENDPOINT=${GRAFANA_CLOUD_PROMETHEUS_ENDPOINT}
+    #   - GRAFANA_CLOUD_PROMETHEUS_USER=${GRAFANA_CLOUD_PROMETHEUS_USER}
+    #   - GRAFANA_CLOUD_PROMETHEUS_TOKEN=${GRAFANA_CLOUD_PROMETHEUS_TOKEN}
+    #   - GRAFANA_CLOUD_OTLP_ENDPOINT=${GRAFANA_CLOUD_OTLP_ENDPOINT}
+    #   - GRAFANA_CLOUD_OTLP_USER=${GRAFANA_CLOUD_OTLP_USER}
+    #   - GRAFANA_CLOUD_OTLP_TOKEN=${GRAFANA_CLOUD_OTLP_TOKEN}
+    # volumes:
+    #   - /var/run/docker.sock:/var/run/docker.sock:ro
+    #   - /proc:/host/proc:ro
+    #   - /sys:/host/sys:ro
+    #   - /:/rootfs:ro
+    # networks:
+    #   - grafana-demo
+    # restart: unless-stopped
+    # privileged: true
+
+  # Load generator for simulating traffic
+  load-generator:
+    image: curlimages/curl:latest
+    container_name: grafana-demo-loadgen
+    command: >
+      sh -c "
+        while true; do
+          echo 'Generating load...'
+          curl -s http://ecommerce-app:3000/ > /dev/null
+          curl -s http://ecommerce-app:3000/products > /dev/null
+          curl -s -X POST http://ecommerce-app:3000/orders -H 'Content-Type: application/json' -d '{\"items\":[{\"id\":\"1\",\"name\":\"Test Product\",\"price\":29.99,\"quantity\":1,\"category\":\"electronics\"}],\"paymentMethod\":\"credit_card\"}' > /dev/null
+          sleep 5
+        done
+      "
+    networks:
+      - grafana-demo
+    depends_on:
+      - ecommerce-app
+    restart: unless-stopped
+
+networks:
+  grafana-demo:
+    driver: bridge
