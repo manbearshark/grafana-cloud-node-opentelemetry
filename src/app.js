@@ -1,14 +1,14 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const { register, collectDefaultMetrics, Counter, Histogram, Gauge } = require('prom-client');
-const { trace, context } = require('@opentelemetry/api');
-const { faker } = require('@faker-js/faker');
-const pino = require('pino');
-
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import { register, collectDefaultMetrics, Counter, Histogram, Gauge } from 'prom-client';
+import { trace, context } from '@opentelemetry/api';
+import { faker } from '@faker-js/faker';
+import logger from './pino-logger.js';
+import pinoHTTP from 'pino-http';
 
 // Initialize OpenTelemetry
-require('./instrumentation');
+//re('./instrumentation');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,12 +19,10 @@ app.use(cors());
 //app.use(morgan('combined'));
 app.use(express.json());
 
-// Set up Pino
-logger = pino();
+// Set up Pino + HTTP logging
+app.use(pinoHTTP(logger));
 
 // TODO
-// - Set up pino-HTTP logging instead of Morgan:
-// - Make sure that works
 // - Send logs to file and to OTEL:
 // - Add in Pino OTEL with trace context:  https://github.com/pinojs/pino-opentelemetry-transport/tree/main/examples/trace-context
 
