@@ -24,7 +24,7 @@ services:
     labels:
       - "com.grafana.alloy.discovery=true"
 
-  # Grafana Alloy agent for metrics and traces collection
+  # Grafana Alloy agent for metrics, logs, and traces collection
   alloy:
     image: grafana/alloy:${GRAFANA_ALLOY_VERSION:-v1.10.0}
     hostname: alloy

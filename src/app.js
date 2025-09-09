@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const morgan = require('morgan');
 const { register, collectDefaultMetrics, Counter, Histogram, Gauge } = require('prom-client');
 const { trace, context } = require('@opentelemetry/api');
 const { faker } = require('@faker-js/faker');
@@ -23,15 +22,11 @@ app.use(express.json());
 // Set up Pino
 logger = pino();
 
-// Create a stream for Morgan to write to, which Pino will then process
-const morganStream = {
-  write: (message) => {
-    logger.info(message.trim()); // Log Morgan's output using Pino
-  },
-};
-
-// Set up Morgan through Pino
-app.use(morgan('combined', { stream: morganStream }));
+// TODO
+// - Set up pino-HTTP logging instead of Morgan:
+// - Make sure that works
+// - Send logs to file and to OTEL:
+// - Add in Pino OTEL with trace context:  https://github.com/pinojs/pino-opentelemetry-transport/tree/main/examples/trace-context
 
 // Prometheus metrics
 collectDefaultMetrics({ register });
