@@ -131,7 +131,7 @@ app.get('/', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     span.setAttributes({
       'page.status': 'error',
       'error.message': error.message
@@ -175,7 +175,7 @@ app.get('/products', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     span.setAttributes({
       'page.status': 'error',
       'error.message': error.message
@@ -252,7 +252,7 @@ app.post('/orders', async (req, res) => {
 
     res.status(paymentSuccess ? 201 : 400).json(order);
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     span.setAttributes({
       'order.status': 'error',
       'error.message': error.message
@@ -269,7 +269,7 @@ app.get('/metrics', async (req, res) => {
         res.set('Content-Type', register.contentType);
         res.send(metrics);      
     } catch (error) {
-        console.log(error);
+        logger.error(error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -284,26 +284,35 @@ app.get('/health', (req, res) => {
   });
 });
 
+app.get('/errors', async (req,res) => {
+  try {
+    throw("There was an error processing the queue request.");
+  } catch (error) {
+    logger.error(error);
+    res.status(500).json({error: 'There was an error processing your request.'});
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error(err.stack);
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Ecommerce app running on port ${PORT}`);
-  console.log(`📊 Metrics available at http://localhost:${PORT}/metrics`);
-  console.log(`🏥 Health check at http://localhost:${PORT}/health`);
+  logger.info(`🚀 Ecommerce app running on port ${PORT}`);
+  logger.info(`📊 Metrics available at http://localhost:${PORT}/metrics`);
+  logger.info(`🏥 Health check at http://localhost:${PORT}/health`);
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
+  logger.info('SIGTERM received, shutting down gracefully');
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully');
+  logger.info('SIGINT received, shutting down gracefully');
   process.exit(0);
 });
