@@ -5,7 +5,7 @@ logging {
 
 // Enable this section to carry out live debugging when configuring Alloy.
 livedebugging {
-    enabled = false
+    enabled = true
 }
 
 // Set up Prometheus scraping for the ecommerce app /metrics endpoint
@@ -28,7 +28,7 @@ prometheus.scrape "ecommerce_app" {
 // In this case, our locally running Mimir service.
 prometheus.remote_write "mimir" {
     endpoint {
-      name = "hosted-prometheus"
+      name = "cloud-prometheus"
       url  = env("GRAFANA_CLOUD_PROMETHEUS_ENDPOINT")
   
       basic_auth {
@@ -39,4 +39,17 @@ prometheus.remote_write "mimir" {
 }
 
 // Configuration for OTEL metrics, logs, traces
+otelcol.receiver.otlp "default" {
+  grpc {
+    endpoint = "0.0.0.0:4317" // Listen for gRPC on port 4317
+  }
+  http {
+    endpoint = "0.0.0.0:4318" // Listen for HTTP on port 4318
+  }
+  output {
+  //  logs    = [otelcol.exporter.otlp.logs_exporter.input]    // Forward logs to Grafana Cloud Loki
+  //  traces  = [otelcol.exporter.otlp.traces_exporter.input]  // Forward traces to Grafana Cloud Tempo
+  //  metrics = [otelcol.exporter.otlp.metrics_exporter.input] // Forward metrics to Grafana Cloud Mimir
+  }
+}
 

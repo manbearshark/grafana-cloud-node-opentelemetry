@@ -4,8 +4,7 @@ import helmet from 'helmet';
 import { register, collectDefaultMetrics, Counter, Histogram, Gauge } from 'prom-client';
 import { trace, context } from '@opentelemetry/api';
 import { faker } from '@faker-js/faker';
-import logger from './pino-logger.js';
-import pinoHTTP from 'pino-http';
+import {http_logger_middleware, logger} from './pino-logger.js'
 
 // Initialize OpenTelemetry
 //re('./instrumentation');
@@ -16,11 +15,10 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(helmet());
 app.use(cors());
-//app.use(morgan('combined'));
 app.use(express.json());
 
-// Set up Pino + HTTP logging
-app.use(pinoHTTP(logger));
+// Set up Pino + HTTP logging middleware for req / res logging from Express
+app.use(http_logger_middleware);
 
 // TODO
 // - Send logs to file and to OTEL:
