@@ -9,6 +9,10 @@ import {http_logger_middleware, logger} from './pino-logger.js'
 // Initialize OpenTelemetry
 //re('./instrumentation');
 
+// TODO
+// - Send logs to file and to OTEL:
+// - Add in Pino OTEL with trace context:  https://github.com/pinojs/pino-opentelemetry-transport/tree/main/examples/trace-context
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -19,10 +23,6 @@ app.use(express.json());
 
 // Set up Pino + HTTP logging middleware for req / res logging from Express
 app.use(http_logger_middleware);
-
-// TODO
-// - Send logs to file and to OTEL:
-// - Add in Pino OTEL with trace context:  https://github.com/pinojs/pino-opentelemetry-transport/tree/main/examples/trace-context
 
 // Prometheus metrics
 collectDefaultMetrics({ register });
@@ -277,7 +277,7 @@ app.get('/health', (req, res) => {
 
 app.get('/errors', async (req,res) => {
   try {
-    throw("There was an error processing the queue request.");
+    throw(new Error("There was an error processing the queue request."));
   } catch (error) {
     logger.error(error);
     res.status(500).json({error: 'There was an error processing your request.'});
@@ -299,11 +299,11 @@ app.listen(PORT, '0.0.0.0', () => {
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
+  logger.fatal('SIGTERM received, shutting down gracefully');
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
-  logger.info('SIGINT received, shutting down gracefully');
+  logger.fatal('SIGINT received, shutting down gracefully');
   process.exit(0);
 });

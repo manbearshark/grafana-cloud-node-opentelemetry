@@ -47,9 +47,28 @@ otelcol.receiver.otlp "default" {
     endpoint = "0.0.0.0:4318" // Listen for HTTP on port 4318
   }
   output {
-  //  logs    = [otelcol.exporter.otlp.logs_exporter.input]    // Forward logs to Grafana Cloud Loki
-  //  traces  = [otelcol.exporter.otlp.traces_exporter.input]  // Forward traces to Grafana Cloud Tempo
-  //  metrics = [otelcol.exporter.otlp.metrics_exporter.input] // Forward metrics to Grafana Cloud Mimir
+    metrics = [otelcol.processor.batch.default.input]
+    logs    = [otelcol.processor.batch.default.input]
+    traces  = [otelcol.processor.batch.default.input]
   }
 }
 
+otelcol.processor.batch "default" {
+  output {
+    metrics = [otelcol.exporter.otlphttp.default.input]
+    logs    = [otelcol.exporter.otlphttp.default.input]
+    traces  = [otelcol.exporter.otlphttp.default.input]
+  }
+}
+
+otelcol.exporter.otlphttp "default" {
+  client {
+    endpoint = env("GRAFANA_CLOUD_OTLP_ENDPOINT")
+    auth     = otelcol.auth.basic.grafana_cloud.handler
+  }
+}
+
+otelcol.auth.basic "grafana_cloud" {
+  username = env("GRAFANA_CLOUD_OTLP_USER")
+  password = env("GRAFANA_CLOUD_OTLP_TOKEN")
+}

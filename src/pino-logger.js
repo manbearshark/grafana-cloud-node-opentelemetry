@@ -3,21 +3,23 @@ import pinoHTTP from 'pino-http';
 
 const __dirname = process.env.PINO_LOGS_DIRECTORY || import.meta.dirname;
 
+// TODO:
+// - Test with a debugger
+// - Forward to OTEL via their config files
+
 // Custom serializers to unpack the req / res objects from Pino HTTP
 // These are not compatible with OTEL standard logging
 
-const customReqSerializer = (req) => {
-    const url = new URL(`${req.protocol}://${req.get("host")}${req.originalUrl}`);
+const reqSerializer = (req) => {
   
     return {
       "http.request.method": req.method,
-      "url.full": url,
       "url.scheme": req.protocol,
       "user_agent.original": req.headers["user-agent"],
     };
   };
   
-  const customResSerializer = (res) => {
+  const resSerializer = (res) => {
     return {
       "http.response.status_code": res.statusCode,
     };
@@ -26,11 +28,11 @@ const customReqSerializer = (req) => {
 // Set up file logging and OTEL transport logger
 const transport = pino.transport({
   targets: [
-    {
-        // Remove this block to stop logging to a local file
-        target: 'pino/file',
-        options: { destination: `${__dirname}/ecommerce-app.log` },
-    },
+    // {
+    //     // Remove this block to stop logging to a local file
+    //     target: 'pino/file',
+    //     options: { destination: `${__dirname}/ecommerce-app.log` },
+    // },
     {
         target: 'pino/file', // logs to the standard output by default - remove to get rid of console logging
     },
@@ -47,18 +49,26 @@ const transport = pino.transport({
             // Custom mapping for a hypothetical 'alert' level
             70: 20 // ALERT (OpenTelemetry does not have a direct 'ALERT' level, so map to a suitable equivalent)
         }}
-        // TODO:
-        // - Map fields to OTEL compliant metrics for spans
-        // - Test with a debugger
-        // - Reformat res / req for Grafana using rewriter...
-        // - Forward to OTEL via their config files
     }
   ],
 });
 
 export const logger = pino(
-        { level: process.env.PINO_LOG_LEVEL || 'info',
-        timestamp: pino.stdTimeFunctions.isoTime} ,
-        transport
+    { level: process.env.PINO_LOG_LEVEL || 'info',
+    timestamp: pino.stdTimeFunctions.isoTime} ,
+    transport
 );
-export const http_logger_middleware = pinoHTTP(logger);
+
+// Set up pino-http to handle res / req logging appropriately - can add more field mappings here if needed
+export const http_logger_middleware = pinoHTTP({
+    logger,
+    // serializers: {
+    //     req: reqSerializer,
+    //     res: resSerializer,
+    // },
+    customLogLevel: (res) => {
+    if (res.statusCode >= 400 && res.statusCode < 500) return "warn";
+    if (res.statusCode >= 500) return "error";
+    return "info";
+    },
+});
