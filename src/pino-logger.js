@@ -1,11 +1,33 @@
 import pino from 'pino';
 import pinoHTTP from 'pino-http';
+import pinoOpenTelemetry from 'pino-opentelemetry-transport';
 
 const __dirname = process.env.PINO_LOGS_DIRECTORY || import.meta.dirname;
 
 // TODO:
 // - Test with a debugger
 // - Forward to OTEL via their config files
+
+const transportOT = pinoOpenTelemetry({
+    serviceInfo: {
+        name: 'my-service',
+        version: '1.0.0'
+    },
+    collectorOptions: {
+        url: process.env.OTEL_GRPC_COLLECTOR_URL || 'http://localhost:4317/v1/logs',
+        headers: {}
+    },
+    messageKey: 'msg',
+    levelKey: 'severity'
+});
+
+const otelStreamEntry = {
+    level: 'trace',
+    write: (msg) => {
+    if (transport.stream && typeof transport.stream.write === 'function') {
+    transport.stream.write(msg);
+    }
+}};
 
 // Custom serializers to unpack the req / res objects from Pino HTTP
 // These are not compatible with OTEL standard logging
