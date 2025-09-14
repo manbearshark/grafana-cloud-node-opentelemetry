@@ -2,16 +2,19 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { register, collectDefaultMetrics, Counter, Histogram, Gauge } from 'prom-client';
-import { trace, context } from '@opentelemetry/api';
+import { trace } from '@opentelemetry/api';
 import { faker } from '@faker-js/faker';
 import {http_logger_middleware, logger} from './pino-logger.js'
 
-// Initialize OpenTelemetry
-//re('./instrumentation');
-
 // TODO
-// - Send logs to file and to OTEL:
+// - Get metrics send working - TRACES WORK WITHOUT HTTP LOGS SEND
 // - Add in Pino OTEL with trace context:  https://github.com/pinojs/pino-opentelemetry-transport/tree/main/examples/trace-context
+// - Get log scraping working from Alloy
+// - Add in scenarios for demoing errors and troubleshooting
+// - Dashboards creation
+// - Alerts
+// - Presentation review from Alex Ma video recording
+// - 
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,12 +25,15 @@ app.use(cors());
 app.use(express.json());
 
 // Set up Pino + HTTP logging middleware for req / res logging from Express
-app.use(http_logger_middleware);
+//app.use(http_logger_middleware);
 
-// Prometheus metrics
+// Set up Prometheus metrics to demonstrate "legacy metrics" alongside OTEL metrics
 collectDefaultMetrics({ register });
 
+
+//////////////////////////////////////////////////////////////////
 // Custom metrics
+
 const pageLoadCounter = new Counter({
   name: 'ecommerce_page_loads_total',
   help: 'Total number of page loads',
@@ -98,6 +104,8 @@ const createSpan = (name, operation) => {
 
 // Routes
 app.get('/', async (req, res) => {
+
+  // Create a span for tracing
   const span = createSpan('homepage-load', (span) => {
     span.setAttributes({
       'page.type': 'homepage',

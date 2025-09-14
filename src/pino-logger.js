@@ -14,7 +14,7 @@ const transportOT = pinoOpenTelemetry({
         version: '1.0.0'
     },
     collectorOptions: {
-        url: process.env.OTEL_GRPC_COLLECTOR_URL || 'http://localhost:4317/v1/logs',
+        url: process.env.OTEL_GRPC_COLLECTOR_URL || 'http://alloy:4317/v1/logs',
         headers: {}
     },
     messageKey: 'msg',
@@ -58,20 +58,20 @@ const transport = pino.transport({
     {
         target: 'pino/file', // logs to the standard output by default - remove to get rid of console logging
     },
-    {
-        target: 'pino-opentelemetry-transport',
-        options: {
-            severityNumberMap: {
-            10: 1, // TRACE
-            20: 5, // DEBUG
-            30: 9, // INFO
-            40: 13, // WARN
-            50: 17, // ERROR
-            60: 21, // FATAL
-            // Custom mapping for a hypothetical 'alert' level
-            70: 20 // ALERT (OpenTelemetry does not have a direct 'ALERT' level, so map to a suitable equivalent)
-        }}
-    }
+    // {
+    //     target: 'pino-opentelemetry-transport',
+    //     options: {
+    //         severityNumberMap: {
+    //         10: 1, // TRACE
+    //         20: 5, // DEBUG
+    //         30: 9, // INFO
+    //         40: 13, // WARN
+    //         50: 17, // ERROR
+    //         60: 21, // FATAL
+    //         // Custom mapping for a hypothetical 'alert' level
+    //         70: 20 // ALERT (OpenTelemetry does not have a direct 'ALERT' level, so map to a suitable equivalent)
+    //     }}
+    // }
   ],
 });
 

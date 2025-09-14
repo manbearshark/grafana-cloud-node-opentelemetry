@@ -1,31 +1,22 @@
-/*instrumentation.js*/
-// Require dependencies
-const opentelemetry = require('@opentelemetry/api');
+// instrumentation.js
 const { NodeSDK } = require('@opentelemetry/sdk-node');
-//const { ConsoleSpanExporter } = require('@opentelemetry/sdk-trace-node');
-const {
-  getNodeAutoInstrumentations,
-} = require('@opentelemetry/auto-instrumentations-node');
+const { OTLPMetricExporter } = require('@opentelemetry/exporter-metrics-otlp-http');
+const { PeriodicExportingMetricReader } = require('@opentelemetry/sdk-metrics');
+const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 
-const {
-    OTLPMetricExporter,
-  } = require('@opentelemetry/exporter-metrics-otlp-proto');
-const {
-  PeriodicExportingMetricReader,
-  ConsoleMetricExporter,
-} = require('@opentelemetry/sdk-metrics');
+//////////////////////////////////////////////////////////////////
+// Set up the OpenTelemetry SDK with Node auto-instrumentations
+// This file is loaded at runtime from the start command in package.json
 
 const sdk = new NodeSDK({
-  //traceExporter: new ConsoleSpanExporter(),
   metricReader: new PeriodicExportingMetricReader({
     exporter: new OTLPMetricExporter({
-      url: process.env.OTLP_METRIC_EXPORTER_URL || 'http://localhost:4318/v1/metrics', // Default to localhost if env variable is not set
-      headers: {
-        'Content-Type': 'application/x-protobuf',
-      },
+      // Configure the OTLP endpoint of your OpenTelemetry Collector
+      url: 'http://alloy:4318/v1/metrics', // Default OTLP HTTP endpoint for metrics
+      headers: {}, // Optional: Add custom headers if needed
     }),
   }),
-  instrumentations: [getNodeAutoInstrumentations()],
+  instrumentations: [getNodeAutoInstrumentations()], // Auto-instrument common Node.js libraries
 });
-console.log('Starting OpenTelemetry SDK...');
+
 sdk.start();
