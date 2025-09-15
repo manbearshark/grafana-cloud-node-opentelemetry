@@ -1,10 +1,10 @@
 {
   "name": "grafana-demo-ecommerce",
-  "version": "1.0.0",
-  "description": "Ecommerce application for Grafana Cloud demonstration",
+  "version": "1.1.0",
+  "description": "Ecommerce application for Grafana Cloud demonstration - Ensemble Corp use cases",
   "main": "./src/app.js",
   "scripts": {
-    "start": "node --require ./src/instrumentation.js ./src/app.js",
+    "start": "node --require ./src/otel-instrumentation.js ./src/app.js",
     "dev": "nodemon src/app.js",
     "test": "node test-app.js",
     "docker:build": "docker build -t grafana-demo-ecommerce .",
@@ -19,6 +19,8 @@
     "@opentelemetry/exporter-trace-otlp-http": "^0.205.0",
     "@opentelemetry/sdk-metrics": "^2.1.0",
     "@opentelemetry/sdk-node": "^0.205.0",
+    "@opentelemetry/sdk-trace-base": "^2.1.0",
+    "@opentelemetry/sdk-trace-node": "^2.1.0",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "helmet": "^7.1.0",

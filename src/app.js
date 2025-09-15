@@ -4,10 +4,11 @@ import helmet from 'helmet';
 import { register, collectDefaultMetrics, Counter, Histogram, Gauge } from 'prom-client';
 import { trace } from '@opentelemetry/api';
 import { faker } from '@faker-js/faker';
-import {http_logger_middleware, logger} from './pino-logger.js'
+import {http_logger_middleware, logger} from './pino-logger.js';
+import opentelemetry from '@opentelemetry/api';
 
 // TODO
-// - Get metrics send working - TRACES WORK WITHOUT HTTP LOGS SEND
+// - Fix request_count metric to use correct temporality whatever the fuck that means
 // - Add in Pino OTEL with trace context:  https://github.com/pinojs/pino-opentelemetry-transport/tree/main/examples/trace-context
 // - Get log scraping working from Alloy
 // - Add in scenarios for demoing errors and troubleshooting
@@ -33,6 +34,12 @@ collectDefaultMetrics({ register });
 
 //////////////////////////////////////////////////////////////////
 // Custom metrics
+
+const meter = opentelemetry.metrics.getMeter('ecommerce_metrics_meter');
+
+const requestCounter = meter.createCounter('request_counter', {
+  description: 'The number of requests we received'
+});
 
 const pageLoadCounter = new Counter({
   name: 'ecommerce_page_loads_total',
@@ -104,6 +111,8 @@ const createSpan = (name, operation) => {
 
 // Routes
 app.get('/', async (req, res) => {
+
+  requestCounter.add(1, { 'action.type': 'root_page_load' });
 
   // Create a span for tracing
   const span = createSpan('homepage-load', (span) => {
