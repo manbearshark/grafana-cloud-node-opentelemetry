@@ -9,12 +9,10 @@ import opentelemetry from '@opentelemetry/api';
 
 // TODO
 // - Add in Pino OTEL with trace context:  https://github.com/pinojs/pino-opentelemetry-transport/tree/main/examples/trace-context
-// - Get log scraping working from Alloy
 // - Add in scenarios for demoing errors and troubleshooting
 // - Dashboards creation
 // - Alerts
 // - Presentation review from Alex Ma video recording
-// - 
 
 const app = express();
 const PORT = process.env.PORT || 3000;

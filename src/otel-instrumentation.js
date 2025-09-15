@@ -9,6 +9,7 @@ const { OTLPMetricExporter } = require("@opentelemetry/exporter-metrics-otlp-pro
 const { MeterProvider, PeriodicExportingMetricReader, AggregationTemporality } = require('@opentelemetry/sdk-metrics');
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 const { LoggerProvider, BatchLogRecordProcessor } = require('@opentelemetry/sdk-logs');
+const { logs, SeverityNumber } = require('@opentelemetry/api-logs');
 const { OTLPLogExporter } = require('@opentelemetry/exporter-logs-otlp-http');
 
 const OTEL_ENDPOINT = process.env.OTEL_EXPORTER_OTLP_ENDPOINT; // TODO: Provide your managed URL here
@@ -73,7 +74,7 @@ const collectorOptions = {
 
 const logExporter = new OTLPLogExporter(collectorOptions);
 const loggerProvider = new LoggerProvider({
-  processors: [new BatchRecordProcessor(logExporter)]
+  processors: [new BatchLogRecordProcessor(logExporter)]
 });
 
-opentelemetry.logs.setGlobalLoggerProvider(loggerProvider);
+logs.setGlobalLoggerProvider(loggerProvider);
