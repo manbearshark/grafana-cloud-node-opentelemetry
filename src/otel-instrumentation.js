@@ -8,9 +8,10 @@ const { OTLPTraceExporter } = require("@opentelemetry/exporter-trace-otlp-proto"
 const { OTLPMetricExporter } = require("@opentelemetry/exporter-metrics-otlp-proto");
 const { MeterProvider, PeriodicExportingMetricReader, AggregationTemporality } = require('@opentelemetry/sdk-metrics');
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
+const { LoggerProvider, BatchLogRecordProcessor } = require('@opentelemetry/sdk-logs');
+const { OTLPLogExporter } = require('@opentelemetry/exporter-logs-otlp-http');
 
-const DT_API_URL = process.env.OTEL_EXPORTER_OTLP_ENDPOINT; // TODO: Provide your managed URL here
-const DT_API_TOKEN = ''; // TODO: Provide the OpenTelemetry-scoped access token here
+const OTEL_ENDPOINT = process.env.OTEL_EXPORTER_OTLP_ENDPOINT; // TODO: Provide your managed URL here
 
 // ===== GENERAL SETUP =====
 
@@ -29,7 +30,7 @@ const resource =
 // ===== TRACING SETUP =====
 
 const exporter = new OTLPTraceExporter({
-    url: DT_API_URL + '/v1/traces',
+    url: OTEL_ENDPOINT + '/v1/traces',
     //headers: { Authorization: 'Api-Token ' + DT_API_TOKEN }
 });
 
@@ -46,7 +47,7 @@ provider.register();
 // ===== METRIC SETUP =====
 
 const metricExporter = new OTLPMetricExporter({
-    url: DT_API_URL + '/v1/metrics',
+    url: OTEL_ENDPOINT + '/v1/metrics',
     //headers: { Authorization: 'Api-Token ' + DT_API_TOKEN },
     //temporalityPreference: AggregationTemporality.DELTA
 });
@@ -63,3 +64,16 @@ const meterProvider = new MeterProvider({
 
 // Set this MeterProvider to be global to the app being instrumented.
 opentelemetry.metrics.setGlobalMeterProvider(meterProvider);
+
+// ===== LOGGING SETUP =====
+const collectorOptions = {
+  url: OTEL_ENDPOINT + '/v1/logs', // url is optional and can be omitted - default is http://localhost:4318/v1/logs
+  concurrencyLimit: 1, // an optional limit on pending requests
+};
+
+const logExporter = new OTLPLogExporter(collectorOptions);
+const loggerProvider = new LoggerProvider({
+  processors: [new BatchRecordProcessor(logExporter)]
+});
+
+opentelemetry.logs.setGlobalLoggerProvider(loggerProvider);

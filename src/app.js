@@ -8,7 +8,6 @@ import {http_logger_middleware, logger} from './pino-logger.js';
 import opentelemetry from '@opentelemetry/api';
 
 // TODO
-// - Fix request_count metric to use correct temporality whatever the fuck that means
 // - Add in Pino OTEL with trace context:  https://github.com/pinojs/pino-opentelemetry-transport/tree/main/examples/trace-context
 // - Get log scraping working from Alloy
 // - Add in scenarios for demoing errors and troubleshooting

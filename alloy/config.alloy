@@ -1,11 +1,11 @@
 logging {
-  level  = "info"
+  level  = "info" // Set to 'debug' to get more detailed logs
   format = "logfmt"
 }
 
 // Enable this section to carry out live debugging when configuring Alloy.
 livedebugging {
-    enabled = true
+    enabled = true // Set to true to enable live debugging in Alloy console (http://localhost:12345)
 }
 
 // Set up Prometheus scraping for the ecommerce app /metrics endpoint
