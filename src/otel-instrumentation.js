@@ -9,29 +9,22 @@ const { OTLPMetricExporter } = require("@opentelemetry/exporter-metrics-otlp-pro
 const { MeterProvider, PeriodicExportingMetricReader, AggregationTemporality } = require('@opentelemetry/sdk-metrics');
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 const { LoggerProvider, BatchLogRecordProcessor } = require('@opentelemetry/sdk-logs');
-const { logs, SeverityNumber } = require('@opentelemetry/api-logs');
+const { SeverityNumber } = require('@opentelemetry/api-logs');
 const { OTLPLogExporter } = require('@opentelemetry/exporter-logs-otlp-http');
 const { PinoInstrumentation } = require('@opentelemetry/instrumentation-pino');
 
 const OTEL_ENDPOINT = process.env.OTEL_EXPORTER_OTLP_ENDPOINT; // TODO: Provide your managed URL here
 
 // ===== GENERAL SETUP =====
-
-registerInstrumentations({
-  instrumentations: [ getNodeAutoInstrumentations(
-    {
-        '@opentelemetry/instrumentation-pino': {
-        },    
-    })],
-});
+// Check OTEL_RESROURCE_ATTRIBUTES for service.name, service.namespace, deployment.environment
 
 const resource =
-  defaultResource().merge(
-    resourceFromAttributes({
-      [ATTR_SERVICE_NAME]: "js-agent",
-      [ATTR_SERVICE_VERSION]: "0.1.0",
-    }));
-
+  defaultResource()
+   .merge(
+     resourceFromAttributes({
+       [ATTR_SERVICE_NAME]: "ecommerce_frontend_app",
+       [ATTR_SERVICE_VERSION]: "0.1.0",
+     }));
 
 // ===== TRACING SETUP =====
 
@@ -70,15 +63,26 @@ const meterProvider = new MeterProvider({
 // Set this MeterProvider to be global to the app being instrumented.
 opentelemetry.metrics.setGlobalMeterProvider(meterProvider);
 
-// ===== LOGGING SETUP =====
-const collectorOptions = {
-  url: OTEL_ENDPOINT + '/v1/logs', // url is optional and can be omitted - default is http://localhost:4318/v1/logs
-  concurrencyLimit: 1, // an optional limit on pending requests
-};
+// // ===== LOGGING SETUP =====
+// const collectorOptions = {
+//   url: OTEL_ENDPOINT + '/v1/logs', // url is optional and can be omitted - default is http://localhost:4318/v1/logs
+//   concurrencyLimit: 1, // an optional limit on pending requests
+// };
 
-const logExporter = new OTLPLogExporter(collectorOptions);
-const loggerProvider = new LoggerProvider({
-  processors: [new BatchLogRecordProcessor(logExporter)]
-});
+// const logExporter = new OTLPLogExporter(collectorOptions);
+// const loggerProvider = new LoggerProvider({
+//   processors: [new BatchLogRecordProcessor(logExporter)]
+// });
+ 
+// logs.setGlobalLoggerProvider(loggerProvider);
 
-logs.setGlobalLoggerProvider(loggerProvider);
+// ===== INSTRUMENTATIONS =====
+
+registerInstrumentations({
+   instrumentations: [ 
+    new PinoInstrumentation({
+      // See below for Pino instrumentation options.
+    }),
+    //new HttpInstrumentation(),
+    //new ExpressInstrumentation()
+ ]});

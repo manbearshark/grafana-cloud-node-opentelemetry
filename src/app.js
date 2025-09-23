@@ -2,17 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { register, collectDefaultMetrics, Counter, Histogram, Gauge } from 'prom-client';
-import { trace } from '@opentelemetry/api';
+import { trace, SpanStatusCode } from '@opentelemetry/api';
 import { faker } from '@faker-js/faker';
 import {http_logger_middleware, logger} from './pino-logger.js';
 import opentelemetry from '@opentelemetry/api';
 
-// TODO
-// - Add in Pino OTEL with trace context:  https://github.com/pinojs/pino-opentelemetry-transport/tree/main/examples/trace-context
-// - Add in scenarios for demoing errors and troubleshooting
-// - Dashboards creation
-// - Alerts
-// - Presentation review from Alex Ma video recording
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,6 +30,14 @@ const meter = opentelemetry.metrics.getMeter('ecommerce_metrics_meter');
 
 const requestCounter = meter.createCounter('request_counter', {
   description: 'The number of requests we received'
+});
+
+const orderCompletionCounter = meter.createCounter('order_completion_counter', {
+  description: 'The number of orders completed.'
+});
+
+const orderCompletionErrorCounter = meter.createCounter('order_completion_errors_counter', {
+  description: 'The number of errors during order completion'
 });
 
 const pageLoadCounter = new Counter({
@@ -135,6 +137,7 @@ app.get('/', async (req, res) => {
       loadTime: `${loadTime.toFixed(2)}ms`,
       timestamp: new Date().toISOString()
     });
+    logger.info('Homepage loaded successfully', { loadTime: `${loadTime.toFixed(2)}ms` });
   } catch (error) {
     logger.error(error);
     span.setAttributes({
@@ -254,6 +257,9 @@ app.post('/orders', async (req, res) => {
       'order.processing_time_ms': processingTime,
       'order.items_count': items.length
     });
+    
+    //orderCompletionErrorCounter.add(paymentSuccess ? 0 : 1);
+    orderCompletionCounter.add(1);
 
     res.status(paymentSuccess ? 201 : 400).json(order);
   } catch (error) {
@@ -290,12 +296,44 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/errors', async (req,res) => {
-  try {
-    throw(new Error("There was an error processing the queue request."));
-  } catch (error) {
-    logger.error(error);
-    res.status(500).json({error: 'There was an error processing your request.'});
-  }
+    orderCompletionErrorCounter.add(1);
+    const span = createSpan('create-order', (span) => {
+    span.setAttributes({
+      'order.operation': 'create',
+      'user.agent': req.get('User-Agent')
+    });
+
+    const err = new Error("There was an error processing the order completion request.");
+    span.setStatus({
+      code: SpanStatusCode.ERROR
+    });
+
+    console.log("Simulating an error for demonstration purposes.");
+    // You can also record the exception for more detail
+    span.recordException(err);
+   
+    span.end();
+    return span;
+  });
+
+  res.status(500).json({error: 'There was an error processing your request.'});
+
+  // try {
+  //   throw(new Error("There was an error processing the order completion request."));
+  // } catch (error) {
+  //   logger.error(error);
+
+  //   span.setStatus({
+  //     code: SpanStatusCode.ERROR,
+  //     message: err.message,
+  //   });
+  //   // You can also record the exception for more detail
+  //   span.recordException(err);
+
+  //   res.status(500).json({error: 'There was an error processing your request.'});
+  // } finally {
+  //   span.end();
+  // }
 });
 
 // Error handling middleware

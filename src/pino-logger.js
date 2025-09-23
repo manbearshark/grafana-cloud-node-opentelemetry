@@ -77,9 +77,11 @@ const transport = pino.transport({
 
 export const logger = pino(
     { level: process.env.PINO_LOG_LEVEL || 'info',
-    timestamp: pino.stdTimeFunctions.isoTime} ,
-    transport
+     timestamp: pino.stdTimeFunctions.isoTime} ,
+//     transport
 );
+
+//export const logger = pino();
 
 // Set up pino-http to handle res / req logging appropriately - can add more field mappings here if needed
 export const http_logger_middleware = pinoHTTP({

@@ -16,7 +16,7 @@ services:
       #- OTEL_TRACES_EXPORTER=otlp
       #- OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy:4318
-      #- OTEL_RESOURCE_ATTRIBUTES="service.name=ecommerce-frontend-app,service.namespace=node-app-demo,deployment.environment=production"
+      - OTEL_RESOURCE_ATTRIBUTES="service.name=ecommerce_frontend_app,service.namespace=node_app_demo,deployment.environment=production"
       #- OTEL_NODE_RESOURCE_DETECTORS="env,host,os"
     networks:
       - grafana-demo
